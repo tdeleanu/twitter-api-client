@@ -1,0 +1,18 @@
+{
+  "name": "twitter-ts",
+  "version": "1.0.0",
+  "description": "Twitter Undisclosed API - TS",
+  "main": "index.ts",
+  "scripts": {
+    "test": "npm run test"
+  },
+  "author": "TEO",
+  "license": "MIT",
+  "dependencies": {
+    "node-ts": "^5.1.2",
+    "requests": "^0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.4"
+  }
+}
