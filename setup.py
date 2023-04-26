@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 install_requires = [
     "nest_asyncio",
     "aiohttp",
-    "requests",
+    "httpx",
     "tqdm",
     "orjson",
     'uvloop; platform_system != "Windows"',
@@ -13,93 +13,100 @@ install_requires = [
 
 setup(
     name="twitter-api-client",
-    version="0.6.0",
+    version="0.7.6",
     python_requires=">=3.11.0",
     description="Twitter API",
     long_description=dedent('''
-    Complete implementation of the undocumented Twitter API
+    Implementation of Twitter's v1, v2, and GraphQL APIs
     
-    Includes tools to **scrape**, **automate**, and **search** twitter
+    Includes tools to **scrape**, **automate**, and **search**.
+
+    ### Automation
     
-    ### Installation
-    
-   ```python
+    ```python
     from twitter.account import Account
     
     email, username, password = ..., ..., ...
-    account = Account(email, username, password)
+    account = Account(email, username, password, debug=2, save=True)
+    
+    account.tweet('test 123')
+    account.untweet(123456)
+    account.retweet(123456)
+    account.unretweet(123456)
+    account.reply('foo', tweet_id=123456)
+    account.quote('bar', tweet_id=123456)
+    account.schedule_tweet('schedule foo', 1681851240)
+    account.unschedule_tweet(123456)
+    
+    account.tweet('hello world', media=[
+        {'media': 'test.jpg', 'alt': 'some alt text', 'tagged_users': [123]},
+        {'media': 'test.jpeg', 'alt': 'some alt text', 'tagged_users': [123]},
+        {'media': 'test.png', 'alt': 'some alt text', 'tagged_users': [123]},
+        {'media': 'test.jfif', 'alt': 'some alt text', 'tagged_users': [123]},
+    ])
+    
+    account.schedule_tweet('foo bar', '2023-04-18 15:42', media=[
+        {'media': 'test.gif', 'alt': 'some alt text'},
+    ])
+    
+    account.schedule_reply('hello world', '2023-04-19 15:42', tweet_id=123456, media=[
+        {'media': 'test.gif', 'alt': 'some alt text'},
+    ])
+    
+    account.dm('my message', [1234], media='test.jpg')
     
     account.create_poll('test poll 123', ['hello', 'world', 'foo', 'bar'], 10080)
     
-    # DM 1 user
-    account.dm([123], 'hello world', filename='test.png')
-    
-    # DM group of users
-    account.dm([123, 234, 345], 'foo bar', filename='test.mp4')
-    
-    # schedule a tweet (date str or timestamp)
-    account.schedule_tweet('scheduled hello', 1679912795, media=['test.jpg'])
-    
-    # schedule a reply tweet (date str or timestamp)
-    account.schedule_tweet('scheduled world', '2023-03-25 19:11', media=['test.jpg'], reply_to=645)
-    
-    account.unschedule_tweet(321)
-    
     # tweets
-    account.tweet('test 123')
-    account.tweet('test 234', media=['test.mp4'])
-    account.tweet('test 345', media=['test.jpg', 'test.png', 'test.jpeg', 'test.jfif'])
-    account.tweet('test 456', media=[{'file': 'test.jpeg', 'tagged_users': [123234345456], 'alt': 'some image'}])
-    account.untweet(123)
-    account.retweet(1633609779745820675)
-    account.unretweet(1633609779745820675)
-    account.quote(1633609779745820675, 'elonmusk', 'test 123')
-    account.reply(1633609779745820675, 'test 123')
-    account.like(1633609779745820675)
-    account.unlike(1633609779745820675)
-    account.bookmark(1633609779745820675)
-    account.unbookmark(1633609779745820675)
-    account.pin(1635479755364651008)
-    account.unpin(1635479755364651008)
+    account.like(123456)
+    account.unlike(123456)
+    account.bookmark(123456)
+    account.unbookmark(123456)
+    account.pin(123456)
+    account.unpin(123456)
     
     # users
-    account.follow(50393960)
-    account.unfollow(50393960)
-    account.mute(50393960)
-    account.unmute(50393960)
-    account.enable_notifications(50393960)
-    account.disable_notifications(50393960)
-    account.block(50393960)
-    account.unblock(50393960)
-    
-    # other
-    account.stats(50393960)
+    account.follow(1234)
+    account.unfollow(1234)
+    account.mute(1234)
+    account.unmute(1234)
+    account.enable_notifications(1234)
+    account.disable_notifications(1234)
+    account.block(1234)
+    account.unblock(1234)
     
     # user profile
     account.update_profile_image('test.jpg')
     account.update_profile_banner('test.png')
     account.update_profile_info(name='Foo Bar', description='test 123', location='Victoria, BC')
     
-    # topics
-    account.follow_topic(808713037230157824)
-    account.unfollow_topic(808713037230157824)
+    #  topics
+    account.follow_topic(111)
+    account.unfollow_topic(111)
     
     # lists
     account.create_list('My List', 'description of my list', private=False)
-    account.update_list(543, 'My Updated List', 'some updated description', private=False)
-    account.update_list_banner(543, 'test.png')
-    account.delete_list_banner(543)
-    account.add_list_member(543, 50393960)
-    account.remove_list_member(543, 50393960)
-    account.delete_list(543)
-    account.pin_list(543)
-    account.unpin_list(543)
+    account.update_list(222, 'My Updated List', 'some updated description', private=False)
+    account.update_list_banner(222, 'test.png')
+    account.delete_list_banner(222)
+    account.add_list_member(222, 1234)
+    account.remove_list_member(222, 1234)
+    account.delete_list(222)
+    account.pin_list(222)
+    account.unpin_list(222)
     
     # refresh all pinned lists in this order
-    account.update_pinned_lists([543, 432, 321])
+    account.update_pinned_lists([222, 111, 333])
     
     # unpin all lists
     account.update_pinned_lists([])
+    
+    # get timelines
+    timeline = account.home_timeline()
+    latest_timeline = account.home_latest_timeline(limit=500)
+    
+    # get bookmarks
+    bookmarks = account.bookmarks()
     
     # example configuration
     account.update_settings({
@@ -149,15 +156,13 @@ setup(
     
     # example configuration
     account.update_search_settings({
-        "optInFiltering": True,  # filter out nsfw content
-        "optInBlocking": True,  # filter out blocked accounts
+        "optInFiltering": True,  # filter nsfw content
+        "optInBlocking": True,  # filter blocked accounts
     })
     
-    ## account.change_password('old password', 'new password')
-    ## account.logout_all_sessions()
+    ## change_password('old pwd','new pwd)
     
     ```
-    
     
     ### Scraping
     
@@ -167,32 +172,51 @@ setup(
     from twitter.scraper import Scraper
     
     email, username, password = ..., ..., ...
-    scraper = Scraper(email, username, password)  # session
+    scraper = Scraper(email, username, password, debug=1, save=True)
     
-    ####### User Data ########
-    users = scraper.user_by_screen_name(['bob123', 'jim456', 'stanley789'])
+    # user data
+    users = scraper.users(['foo', 'bar', 'hello', 'world'])
+    users = scraper.users_by_ids([123, 234, 345])  # batch-request
     tweets = scraper.tweets([123, 234, 345])
     likes = scraper.likes([123, 234, 345])
     tweets_and_replies = scraper.tweets_and_replies([123, 234, 345])
     media = scraper.media([123, 234, 345])
     following = scraper.following([123, 234, 345])
     followers = scraper.followers([123, 234, 345])
+    scraper.tweet_stats([111111, 222222, 333333])
     
-    ######## Tweet Data ########
-    tweets_by_ids = scraper.tweet_by_rest_id([456, 567, 678])
-    tweets_details = scraper.tweets_details([456, 567, 678])
-    retweeters = scraper.retweeters([456, 567, 678])
-    favoriters = scraper.favoriters([456, 567, 678])
+    # get recommended users based on user
+    scraper.recommended_users()
+    scraper.recommended_users(123)
     
-    scraper.download_media([456, 567, 678])
+    # tweet data
+    tweets_by_ids = scraper.tweets_by_id([987, 876, 754])
+    tweets_details = scraper.tweets_details([987, 876, 754])
+    retweeters = scraper.retweeters([987, 876, 754])
+    favoriters = scraper.favoriters([987, 876, 754])
+    
+    scraper.download_media([
+        111111,
+        222222,
+        333333,
+        444444,
+    ])
+    
+
+    
+    # trends
+    scraper.trends()
     ```
     
     #### Search
     
     ```python   
-    from twitter.search import search
+    from twitter.search import Search
     
-    search(
+    email, username, password = ..., ..., ...
+    search = Search(email, username, password)
+    
+    res = search.run(
         '(#dogs OR #cats) min_retweets:500',
         'min_faves:10000 @elonmusk until:2023-02-16 since:2023-02-01',
         'brasil portugal -argentina',
@@ -200,13 +224,14 @@ setup(
         'skateboarding baseball guitar',
         'cheese bread butter',
         'ios android',
+        limit=100,
     )
     ```
     '''),
     long_description_content_type='text/markdown',
     author="Trevor Hobenshield",
     author_email="trevorhobenshield@gmail.com",
-    url="https://github.com/trevorhobenshield/twitter-api",
+    url="https://github.com/trevorhobenshield/twitter-api-client",
     install_requires=install_requires,
     keywords="twitter api client async search automation bot scrape",
     packages=find_packages(),
